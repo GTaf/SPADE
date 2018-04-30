@@ -70,33 +70,29 @@ public class CamFlow extends AbstractReporter {
 
                 String file_path = arguments.trim();
                 String line;
-                StringBuffer jsonString = new StringBuffer();
+                String jsonString = "";
                 BufferedReader br;
                 JSONArray jsonArray;
+		int count = 0;
                 try {
                   debugLog("Starting to read json file");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
+		  line = br.readLine();br.readLine();br.readLine();
                   while ((line = br.readLine()) != null) {
-		      System.out.println(line);
-                      jsonString.append(line);
-                  }
-                  br.close();
-                  debugLog("Sucessfully read json file");
-
-                } catch (IOException e) {
-                    JSON.log(Level.SEVERE, "Can't open and read json file.", e);
-                }
-
-                debugLog("Starting to objectify JSON content");
-                try {
-                  jsonArray = new JSONArray(jsonString.toString());
-                } catch (JSONException e){
-                  JSON.log(Level.SEVERE, "Failed to create JSON Array object", e);
-                  return;
-                }
-                debugLog("Sucessfully objectified JSON content");
-
-                processJsonArray(jsonArray);
+                      jsonString += ("{"+br.readLine());
+		      jsonString += br.readLine();
+		      jsonString += br.readLine()+"}";
+		      JSONObject json = new JSONObject(jsonString);
+		      processJsonString(json);
+		      System.out.println(jsonString);
+		      jsonString = "";
+		      br.readLine();
+		      count++;
+		      //System.out.println(line);
+		  }  
+		}
+		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);}
+		debugLog("Job is over, processed "+ count + " lines.");
               }
         };
         new Thread(eventThread, "JsonReporter-Thread").start();
@@ -109,24 +105,11 @@ public class CamFlow extends AbstractReporter {
         return true;
     }
 
-    private void processJsonArray(JSONArray jsonArray) {
-      debugLog("Size of JSON Array: " + jsonArray.length());
-      for (int i=0; i<jsonArray.length();i++) {
-        JSONObject jsonObject;
-        try {
-          jsonObject = jsonArray.getJSONObject(i);
-        } catch (JSONException e) {
-          JSON.log(Level.SEVERE, "Can not read object in JSON Array", e);
-          continue;
-        }
-
+    private void processJsonString(JSONObject jsonObject) {
         String objectType;
         try {
           objectType = jsonObject.getString("type");
-        } catch (JSONException e) {
-          JSON.log(Level.SEVERE, "Missing type in object, can not access if its node or edge, ignoring object", null);
-          continue;
-        }
+        
 
         if (objectType.equalsIgnoreCase("Activity") ||
           objectType.equalsIgnoreCase("Agent") ||
@@ -145,24 +128,15 @@ public class CamFlow extends AbstractReporter {
         } else {
           JSON.log(Level.SEVERE, "Unknown object type: '" + objectType + "', ignoring object", null);
         }
-      }
-      debugLog("All provenance reported through JSON file has been retrived. Wait for buffers to clear....");
-
-      try {
-        while (this.getBuffer().size()!=0) {
-          Thread.sleep(1000);
-          debugLog("Size of buffer: " + this.getBuffer().size());
-        }
-      } catch (Exception e){}
-
-      debugLog("All buffers cleared. You may remove JSON reporter");
-
+	
+        } catch (JSONException e) {
+          JSON.log(Level.SEVERE, "Missing type in object, can not access if its node or edge, ignoring object", null);
+	}
     }
 
     private void processVertex(JSONObject vertexObject) {
       // Activity, Agent, Entity
       String id = null;
-      
       try {
     	Object idValue = vertexObject.get("id");
     	if(idValue == null){
@@ -173,7 +147,6 @@ public class CamFlow extends AbstractReporter {
         JSON.log(Level.SEVERE, "Missing id in vertex, ignoring vertex : " + vertexObject.toString() , null);
         return;
       }
-
       String vertexType;
       try {
         vertexType = vertexObject.getString("type");
@@ -299,7 +272,6 @@ public class CamFlow extends AbstractReporter {
     }
 
     private void addVertex(String edgeId, AbstractVertex edge){
-	System.out.println("Adding Vertex : "+edgeId);
     	if (vertices.containsKey(edgeId)) {
 		Object[] arr  = vertices.get(edgeId);
 		vertices.put(edgeId, new Object[] {edge,(Integer) arr[1] + 1} );
@@ -310,8 +282,8 @@ public class CamFlow extends AbstractReporter {
     }
 
     private AbstractVertex getVertex(String edgeId) {
-	System.out.println("Getting Vertex : "+edgeId);
 	Object[] arr = vertices.get(edgeId);
+	if (arr == null) return null;
 	AbstractVertex edge = (AbstractVertex) arr[0]; // gets the edge, stored first
 
 	if( (Integer) arr[1] == 1 ) {//if there was only one entry associated to this edge, remove from the hashmap
