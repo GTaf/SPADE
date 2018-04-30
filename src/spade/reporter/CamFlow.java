@@ -24,6 +24,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.HashMap;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,20 +50,20 @@ import spade.vertex.prov.Entity;
 /**
  * JSON reporter for SPADE
  *
- * @author Hasanat Kazmi
+ * @author Aurélien Chaline from the original file JSON.java by Hasanat Kazmi
  */
-public class JSON extends AbstractReporter {
+public class CamFlow extends AbstractReporter {
 
     private boolean shutdown = false;
     private boolean PRINT_DEBUG = true;
-    private HashMap<String, AbstractVertex> vertices;
+    private HashMap<String, Object[] > vertices;
 
     @Override
     public boolean launch(final String arguments) {
         /*
         * argument is path to json file
         */
-        vertices = new HashMap<String, AbstractVertex>();
+        vertices = new HashMap<String, Object[]>();
 
         Runnable eventThread = new Runnable() {
             public void run() {
@@ -76,6 +77,7 @@ public class JSON extends AbstractReporter {
                   debugLog("Starting to read json file");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
                   while ((line = br.readLine()) != null) {
+		      System.out.println(line);
                       jsonString.append(line);
                   }
                   br.close();
@@ -203,7 +205,7 @@ public class JSON extends AbstractReporter {
         // no annotations
       }
 
-      vertices.put(id, vertex);
+      addVertex(id, vertex);//ads the vertex to the Hashmap
       putVertex(vertex);
     }
 
@@ -232,8 +234,8 @@ public class JSON extends AbstractReporter {
         return;
       }
 
-      AbstractVertex fromVertex = vertices.get(from);
-      AbstractVertex toVertex = vertices.get(to);
+      AbstractVertex fromVertex = getVertex(from);
+      AbstractVertex toVertex = getVertex(to);
 
       if (fromVertex == null || toVertex == null) {
         JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.toString() , null);
@@ -294,6 +296,31 @@ public class JSON extends AbstractReporter {
         } else {
             Logger.getLogger(JSON.class.getName()).log(level, msg, thrown);
         }
+    }
+
+    private void addVertex(String edgeId, AbstractVertex edge){
+	System.out.println("Adding Vertex : "+edgeId);
+    	if (vertices.containsKey(edgeId)) {
+		Object[] arr  = vertices.get(edgeId);
+		vertices.put(edgeId, new Object[] {edge,(Integer) arr[1] + 1} );
+	}
+	else {
+		vertices.put(edgeId, new Object[] {edge, 1});
+	}
+    }
+
+    private AbstractVertex getVertex(String edgeId) {
+	System.out.println("Getting Vertex : "+edgeId);
+	Object[] arr = vertices.get(edgeId);
+	AbstractVertex edge = (AbstractVertex) arr[0]; // gets the edge, stored first
+
+	if( (Integer) arr[1] == 1 ) {//if there was only one entry associated to this edge, remove from the hashmap
+		vertices.remove(edgeId);
+	}
+	else {
+		vertices.put(edgeId, new Object[] {edge,(Integer) arr[1] - 1} );//else we just replace the entry
+	}
+	return edge;
     }
     
 }
