@@ -1,0 +1,13 @@
+[Unit]
+Description= Support for Auditing in Distributed Environement
+Wants=network-online.target
+After=network-online.target
+After=camflowd.service
+
+[Service]
+Type=forking
+ExecStart=/home/vagrant/SPADE/bin/spade start
+Restart=always
+RestartSec=42s
+[Install]
+WantedBy=multi-user.target
