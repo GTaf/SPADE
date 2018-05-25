@@ -36,6 +36,8 @@ import org.json.JSONObject;
 import spade.core.AbstractEdge;
 import spade.core.AbstractReporter;
 import spade.core.AbstractVertex;
+import spade.core.Settings;
+import spade.utility.FileUtility;
 import spade.edge.prov.ActedOnBehalfOf;
 import spade.edge.prov.Used;
 import spade.edge.prov.WasAssociatedWith;
@@ -46,6 +48,7 @@ import spade.edge.prov.WasInformedBy;
 import spade.vertex.prov.Activity;
 import spade.vertex.prov.Agent;
 import spade.vertex.prov.Entity;
+import java.util.Map;
 
 /**
  * JSON reporter for SPADE
@@ -57,6 +60,7 @@ public class CamFlow extends AbstractReporter {
     private boolean shutdown = false;
     private boolean PRINT_DEBUG = true;
     private HashMap<String, Object[] > vertices;
+    int batchSize = 5;
 
     @Override
     public boolean launch(final String arguments) {
@@ -64,6 +68,13 @@ public class CamFlow extends AbstractReporter {
         * argument is path to json file
         */
         vertices = new HashMap<String, Object[]>();
+	
+        	
+	Map<String, String> configMap = readDefaultConfigFile();//gets the batch size from the config file
+	if(configMap != null){
+		this.batchSize = Integer.parseInt(configMap.get("batch_size"));
+
+	}
 
         Runnable eventThread = new Runnable() {
             public void run() {
@@ -77,17 +88,28 @@ public class CamFlow extends AbstractReporter {
                 try {
                   debugLog("Starting to read json file");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
-		  line = br.readLine();br.readLine();br.readLine();
+		  line = br.readLine();br.readLine();br.readLine();//removes thrre first useless lines
                   while ((line = br.readLine()) != null) {
-                      jsonString += ("{"+br.readLine());
-		      jsonString += br.readLine();
-		      jsonString += br.readLine()+"}";
-		      JSONObject json = new JSONObject(jsonString);
-		      processJsonString(json);
-		      System.out.println(jsonString);
+		      JSONObject[] buf = new JSONObject[batchSize];
+		      for(int i =0; i < batchSize; i++){
+			if(i != 0) br.readLine();
+                      	jsonString += ("{"+br.readLine());
+		      	jsonString += br.readLine();
+		      	jsonString += br.readLine()+"}";
+		      	JSONObject json = new JSONObject(jsonString);
+			//System.out.println(json);
+		      	buf[i] = json;
+			jsonString = "";
+			count++;
+			if(br.readLine() == null){break;}//delete the useless line and checks if we get to EOF
+		      }
+		      for(int i = 0; i < batchSize && buf[i] != null ; i++){
+		      	processJsonString(buf[i]);
+		      }
+		      //System.out.println(jsonString);
 		      jsonString = "";
-		      br.readLine();
-		      count++;
+		      //br.readLine();
+		      
 		      //System.out.println(line);
 		  }  
 		}
@@ -103,6 +125,18 @@ public class CamFlow extends AbstractReporter {
     public boolean shutdown() {
         shutdown=true;
         return true;
+    }
+
+    private Map<String, String> readDefaultConfigFile(){
+                try{
+                        return FileUtility.readConfigFileAsKeyValueMap(
+                                        Settings.getDefaultConfigFilePath(this.getClass()),
+                                        "="
+                                        );
+                }catch(Exception e){
+                        JSON.log(Level.SEVERE, "Failed to load config file", e);
+                        return null;
+                }
     }
 
     private void processJsonString(JSONObject jsonObject) {
@@ -211,8 +245,13 @@ public class CamFlow extends AbstractReporter {
       AbstractVertex toVertex = getVertex(to);
 
       if (fromVertex == null || toVertex == null) {
-        JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.toString() , null);
-        return;
+	      try{
+        //JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations").getString("relation_type") , null);
+	              String type = edgeObject.getJSONObject("annotations").getString("relation_type");
+		      if(/*!type.equals("named") && !type.equals("arg")*/true)System.out.println(type);
+	      }
+	      catch(Exception e){}
+	return;
       }
 
       String edgeType;
