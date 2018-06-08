@@ -93,27 +93,26 @@ public class CamFlow extends AbstractReporter {
 		      JSONObject[] buf = new JSONObject[batchSize];
 		      for(int i =0; i < batchSize; i++){
 			if(i != 0) br.readLine();
-                      	jsonString += ("{"+br.readLine());
+			if((line = br.readLine()) == null) break;
+                      	jsonString += ("{"+line);
 		      	jsonString += br.readLine();
 		      	jsonString += br.readLine()+"}";
 		      	JSONObject json = new JSONObject(jsonString);
-			//System.out.println(json);
 		      	buf[i] = json;
 			jsonString = "";
 			count++;
-			if(br.readLine() == null){break;}//delete the useless line and checks if we get to EOF
+			br.readLine();
 		      }
 		      for(int i = 0; i < batchSize && buf[i] != null ; i++){
 		      	processJsonString(buf[i]);
 		      }
-		      //System.out.println(jsonString);
 		      jsonString = "";
 		      //br.readLine();
 		      
-		      //System.out.println(line);
 		  }  
 		}
-		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);}
+		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);
+		System.out.println(e);}
 		debugLog("Job is over, processed "+ count + " lines.");
               }
         };
@@ -207,8 +206,9 @@ public class CamFlow extends AbstractReporter {
             String value = annotationsObject.getString(key);
             vertex.addAnnotation(key, value);
           }
+          }
         }
-      } catch (JSONException e) {
+      catch (JSONException e) {
         // no annotations
       }
 
@@ -246,9 +246,9 @@ public class CamFlow extends AbstractReporter {
 
       if (fromVertex == null || toVertex == null) {
 	      try{
-        //JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations").getString("relation_type") , null);
-	              String type = edgeObject.getJSONObject("annotations").getString("relation_type");
-		      if(/*!type.equals("named") && !type.equals("arg")*/true)System.out.println(type);
+        	JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations").getString("relation_type") , null);
+	              //String type = edgeObject.getJSONObject("annotations").getString("relation_type");
+		      //if(/*!type.equals("named") && !type.equals("arg")*/true)System.out.println(type);
 	      }
 	      catch(Exception e){}
 	return;
