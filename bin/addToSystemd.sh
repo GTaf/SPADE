@@ -1,8 +1,6 @@
 #!/bin/bash
 SPADE_ROOT="$( cd "$( dirname "${BASH_SOURCE[0]}" )"/../ && pwd )"
 
-echo $SPADE_ROOT
-
 sudo sed -i 's/ExecStart=.*/ExecStart=$SPADE_ROOT/bin/spade start/g' $SPADE_ROOT/bin/SPADE.service
 
 sudo cp $SPADE_ROOT/bin/SPADE.service /etc/systemd/system
