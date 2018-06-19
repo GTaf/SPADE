@@ -111,8 +111,7 @@ public class CamFlow extends AbstractReporter {
 		      
 		  }  
 		}
-		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);
-		System.out.println(e);}
+		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);}
 		debugLog("Job is over, processed "+ count + " lines.");
               }
         };
@@ -246,9 +245,7 @@ public class CamFlow extends AbstractReporter {
 
       if (fromVertex == null || toVertex == null) {
 	      try{
-        	JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations").getString("relation_type") , null);
-	              //String type = edgeObject.getJSONObject("annotations").getString("relation_type");
-		      //if(/*!type.equals("named") && !type.equals("arg")*/true)System.out.println(type);
+        	JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations"), null);
 	      }
 	      catch(Exception e){}
 	return;
