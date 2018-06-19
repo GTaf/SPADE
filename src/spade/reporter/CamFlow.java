@@ -17,7 +17,7 @@
  along with this program. If not, see <http://www.gnu.org/licenses/>.
  --------------------------------------------------------------------------------
  */
- package spade.reporter;
+package spade.reporter;
 
 import java.io.BufferedReader;
 import java.io.FileInputStream;
@@ -51,7 +51,7 @@ import spade.vertex.prov.Entity;
 import java.util.Map;
 
 /**
- * JSON reporter for SPADE
+ * CamFlow reporter for SPADE
  *
  * @author Aurélien Chaline from the original file JSON.java by Hasanat Kazmi
  */
@@ -65,7 +65,7 @@ public class CamFlow extends AbstractReporter {
     @Override
     public boolean launch(final String arguments) {
         /*
-        * argument is path to json file
+        * argument is path to CamFlow output
         */
         vertices = new HashMap<String, Object[]>();
 	
@@ -86,7 +86,7 @@ public class CamFlow extends AbstractReporter {
                 JSONArray jsonArray;
 		int count = 0;
                 try {
-                  debugLog("Starting to read json file");
+                  debugLog("Starting to read CamFlow output");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
 		  line = br.readLine();br.readLine();br.readLine();//removes thrre first useless lines
                   while ((line = br.readLine()) != null) {
@@ -111,12 +111,11 @@ public class CamFlow extends AbstractReporter {
 		      
 		  }  
 		}
-		catch(Exception e){JSON.log(Level.SEVERE, "Unknown object type: problem reading", null);
-		System.out.println(e);}
+		catch(Exception e){CamFlow.log(Level.SEVERE, "Unknown object type: problem reading", null);}
 		debugLog("Job is over, processed "+ count + " lines.");
               }
         };
-        new Thread(eventThread, "JsonReporter-Thread").start();
+        new Thread(eventThread, "CamFlowReporter-Thread").start();
         return true;
     }
 
@@ -133,7 +132,7 @@ public class CamFlow extends AbstractReporter {
                                         "="
                                         );
                 }catch(Exception e){
-                        JSON.log(Level.SEVERE, "Failed to load config file", e);
+                        CamFlow.log(Level.SEVERE, "Failed to load config file", e);
                         return null;
                 }
     }
@@ -159,11 +158,11 @@ public class CamFlow extends AbstractReporter {
         ){
           processEdge(jsonObject);
         } else {
-          JSON.log(Level.SEVERE, "Unknown object type: '" + objectType + "', ignoring object", null);
+          CamFlow.log(Level.SEVERE, "Unknown object type: '" + objectType + "', ignoring object", null);
         }
 	
         } catch (JSONException e) {
-          JSON.log(Level.SEVERE, "Missing type in object, can not access if its node or edge, ignoring object", null);
+          CamFlow.log(Level.SEVERE, "Missing type in object, can not access if its node or edge, ignoring object", null);
 	}
     }
 
@@ -177,7 +176,7 @@ public class CamFlow extends AbstractReporter {
     	}
         id = String.valueOf(idValue);
       } catch (JSONException e) {
-        JSON.log(Level.SEVERE, "Missing id in vertex, ignoring vertex : " + vertexObject.toString() , null);
+        CamFlow.log(Level.SEVERE, "Missing id in vertex, ignoring vertex : " + vertexObject.toString() , null);
         return;
       }
       String vertexType;
@@ -225,7 +224,7 @@ public class CamFlow extends AbstractReporter {
         }
         from = String.valueOf(fromValue);
       } catch (JSONException e) {
-        JSON.log(Level.SEVERE, "Missing 'from' in edge, ignoring edge : " + edgeObject.toString() , null);
+        CamFlow.log(Level.SEVERE, "Missing 'from' in edge, ignoring edge : " + edgeObject.toString() , null);
         return;
       }
 
@@ -237,7 +236,7 @@ public class CamFlow extends AbstractReporter {
         }
         to = String.valueOf(toValue);
       } catch (JSONException e) {
-        JSON.log(Level.SEVERE, "Missing 'to' in edge, ignoring edge : " + edgeObject.toString() , null);
+        CamFlow.log(Level.SEVERE, "Missing 'to' in edge, ignoring edge : " + edgeObject.toString() , null);
         return;
       }
 
@@ -246,9 +245,7 @@ public class CamFlow extends AbstractReporter {
 
       if (fromVertex == null || toVertex == null) {
 	      try{
-        	JSON.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations").getString("relation_type") , null);
-	              //String type = edgeObject.getJSONObject("annotations").getString("relation_type");
-		      //if(/*!type.equals("named") && !type.equals("arg")*/true)System.out.println(type);
+        	CamFlow.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations"), null);
 	      }
 	      catch(Exception e){}
 	return;
@@ -299,14 +296,14 @@ public class CamFlow extends AbstractReporter {
 
     public void debugLog(String msg) {
       if (PRINT_DEBUG == true) {
-        JSON.log(Level.INFO, msg, null);
+        CamFlow.log(Level.INFO, msg, null);
       }
     }
 
     public static void log(Level level, String msg, Throwable thrown) {
         if (level == level.FINE) {
         } else {
-            Logger.getLogger(JSON.class.getName()).log(level, msg, thrown);
+            Logger.getLogger(CamFlow.class.getName()).log(level, msg, thrown);
         }
     }
 
