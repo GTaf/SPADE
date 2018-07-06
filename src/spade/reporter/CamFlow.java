@@ -200,11 +200,9 @@ public class CamFlow extends AbstractReporter {
       try {
         annotationsObject = vertexObject.getJSONObject("annotations");
         if (annotationsObject.length()!=0) {
-          for(Iterator iterator = annotationsObject.keys(); iterator.hasNext();) {
-            String key = (String) iterator.next();
-            String value = annotationsObject.getString(key);
-            vertex.addAnnotation(key, value);
-          }
+          for(int i = 0; i<annotationsObject.names().length(); i++){
+               vertex.addAnnotation(annotationsObject.names().getString(i), annotationsObject.get(annotationsObject.names().getString(i)).toString());
+           }
           }
         }
       catch (JSONException e) {
