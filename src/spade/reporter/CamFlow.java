@@ -275,14 +275,14 @@ public class CamFlow extends AbstractReporter {
       }
 
       JSONObject annotationsObject;
-      try {
-        annotationsObject = edgeObject.getJSONObject("annotations");
+     
+	try {
+        annotationsObject = vertexObject.getJSONObject("annotations");
         if (annotationsObject.length()!=0) {
-          for(Iterator iterator = annotationsObject.keys(); iterator.hasNext();) {
-            String key = (String) iterator.next();
-            String value = annotationsObject.getString(key);
-            edge.addAnnotation(key, value);
-          }
+          for(int i = 0; i<annotationsObject.names().length(); i++){
+               edge.addAnnotation(annotationsObject.names().getString(i), annotationsObject.get(annotationsObject.names().getString(i)).toString());
+                }
+           }
         }
 
       } catch (JSONException e) {
