@@ -88,7 +88,7 @@ public class CamFlow extends AbstractReporter {
                 try {
                   debugLog("Starting to read CamFlow output");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
-		  line = br.readLine();br.readLine();br.readLine();//removes thrre first useless lines
+		  line = br.readLine();br.readLine();br.readLine();br.readLine();//removes thrre first useless lines
                   while ((line = br.readLine()) != null) {
 		      JSONObject[] buf = new JSONObject[batchSize];
 		      for(int i =0; i < batchSize; i++){
