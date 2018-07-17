@@ -61,7 +61,8 @@ public class CamFlow extends AbstractReporter {
     private boolean PRINT_DEBUG = true;
     private HashMap<String, Object[] > vertices;
     int batchSize = 5;
-
+    private boolean missing = false;
+    private ArrayList<JSONObject> missingEdge = new ArrayList<JSONObject>();
     @Override
     public boolean launch(final String arguments) {
         /*
@@ -88,7 +89,9 @@ public class CamFlow extends AbstractReporter {
                 try {
                   debugLog("Starting to read CamFlow output");
                   br = new BufferedReader(new InputStreamReader(new FileInputStream(file_path)));
-		  line = br.readLine();br.readLine();br.readLine();br.readLine();//removes thrre first useless lines
+		  line = br.readLine();
+		  while (line.charAt(0) != '['){line = br.readLine();}
+		  br.readLine();br.readLine();//removes thrre first useless lines
                   while ((line = br.readLine()) != null) {
 		      JSONObject[] buf = new JSONObject[batchSize];
 		      for(int i =0; i < batchSize; i++){
@@ -112,6 +115,7 @@ public class CamFlow extends AbstractReporter {
 		  }  
 		}
 		catch(Exception e){CamFlow.log(Level.SEVERE, "Unknown object type: problem reading", null);}
+		MissingEdgesAdd();
 		debugLog("Job is over, processed "+ count + " lines.");
               }
         };
@@ -125,6 +129,12 @@ public class CamFlow extends AbstractReporter {
         return true;
     }
 
+    private void MissingEdgesAdd(){
+ 	    missing = true;
+ 	    for(int i = 0; i < missingEdge.size(); i++){
+ 		processJsonString(missingEdge.get(i));
+ 	    }
+     }
     private Map<String, String> readDefaultConfigFile(){
                 try{
                         return FileUtility.readConfigFileAsKeyValueMap(
@@ -243,9 +253,12 @@ public class CamFlow extends AbstractReporter {
 
       if (fromVertex == null || toVertex == null) {
 	      try{
-        	CamFlow.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject.getJSONObject("annotations"), null);
+        	if(missing) CamFlow.log(Level.SEVERE, "Starting and/or ending vertex of edge hasn't been seen before, ignoring edge : " + edgeObject, null);
 	      }
 	      catch(Exception e){}
+	      if (!missing)missingEdge.add(edgeObject);
+	      if (fromVertex != null) addVertex(from,fromVertex);
+	      if (toVertex   != null) addVertex(to  ,toVertex  );
 	return;
       }
 
