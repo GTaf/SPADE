@@ -110,11 +110,12 @@ public class CamFlow extends AbstractReporter {
 		      	processJsonString(buf[i]);
 		      }
 		      jsonString = "";
-		      //br.readLine();
+		      if (count % 1000 == 0) MissingEdgesAdd();
 		      
 		  }  
 		}
 		catch(Exception e){CamFlow.log(Level.SEVERE, "Unknown object type: problem reading", null);}
+ 	        missing = true;
 		MissingEdgesAdd();
 		debugLog("Job is over, processed "+ count + " lines.");
               }
@@ -130,7 +131,6 @@ public class CamFlow extends AbstractReporter {
     }
 
     private void MissingEdgesAdd(){
- 	    missing = true;
  	    for(int i = 0; i < missingEdge.size(); i++){
  		processJsonString(missingEdge.get(i));
  	    }
