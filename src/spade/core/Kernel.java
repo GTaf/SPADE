@@ -124,7 +124,7 @@ public class Kernel
     /**
      * Set of storages active on the local SPADE instance.
      */
-    public static Set<AbstractStorage> storages;
+    public static Set<AbstractStorage>storages;
 
     public static AbstractStorage getStorage(String storageName)
     {
@@ -876,7 +876,7 @@ public class Kernel
                 arguments = (tokens.length == 3) ? null : tokens[3];
                 logger.log(Level.INFO, "Adding storage: {0}", className);
                 outputStream.print("Adding storage " + className + "... ");
-                AbstractStorage storage = null;
+                AbstractStorage storage;
                 try
                 {
                     storage = (AbstractStorage) Class.forName("spade.storage." + className).newInstance();
@@ -893,20 +893,29 @@ public class Kernel
                     logger.log(Level.SEVERE, "Unable to find/load class", er);
                     return;
                 }
-                if (storage.initialize(arguments))
+                try
                 {
-                    // The initialize() method must return true to indicate
-                    // successful startup.
-                    storage.arguments = arguments;
-                    storage.vertexCount = 0;
-                    storage.edgeCount = 0;
-                    storages.add(storage);
-                    AbstractQuery.setCurrentStorage(storage);
-                    logger.log(Level.INFO, "Storage added: {0}", className + " " + arguments);
-                    outputStream.println("done");
+                    if(storage.initialize(arguments))
+                    {
+                        // The initialize() method must return true to indicate
+                        // successful startup.
+                        storage.arguments = arguments;
+                        storage.vertexCount = 0;
+                        storage.edgeCount = 0;
+                        storages.add(storage);
+                        AbstractQuery.setCurrentStorage(storage);
+                        logger.log(Level.INFO, "Storage added: {0}", className + " " + arguments);
+                        logger.log(Level.INFO, "currentStorage set to "+ storage.getClass().getName());
+                        outputStream.println("done");
+                    }
+                    else
+                    {
+                        outputStream.println("failed");
+                    }
                 }
-                else
+                catch(Exception | Error ex)
                 {
+                    logger.log(Level.SEVERE, "Unable to initialize storage!", ex);
                     outputStream.println("failed");
                 }
 
@@ -1338,6 +1347,11 @@ public class Kernel
                         // Search for the given storage in the storages set.
                         if (storage.getClass().getSimpleName().equals(className))
                         {
+                            boolean updateCurrentStorage = false;
+                            if(AbstractQuery.getCurrentStorage().equals(storage))
+                            {
+                                updateCurrentStorage = true;
+                            }
                             // Mark the storage for removal by adding it to the removeStorages set.
                             // This will enable the main SPADE thread to safely commit any transactions
                             // and then remove the storage.
@@ -1354,6 +1368,19 @@ public class Kernel
                                 Thread.sleep(REMOVE_WAIT_DELAY);
                             }
                             storageIterator.remove();
+                            if(updateCurrentStorage)
+                            {
+                                if(storageIterator.hasNext())
+                                {
+                                    AbstractStorage nextStorage = storageIterator.next();
+                                    AbstractQuery.setCurrentStorage(nextStorage);
+                                    logger.log(Level.INFO, "currentStorage updated to " + nextStorage.getClass().getName());
+                                }
+                                else
+                                {
+                                    AbstractQuery.setCurrentStorage(null);
+                                }
+                            }
                             logger.log(Level.INFO, "Storage shut down: {0} ({1} vertices and {2} edges were added)",
                                     new Object[]{className, vertexCount, edgeCount});
                             outputStream.println("done (" + vertexCount + " vertices and " + edgeCount + " edges added)");
